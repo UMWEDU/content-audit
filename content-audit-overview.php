@@ -9,11 +9,15 @@ function content_audit_overview() { ?>
 	// get post types we're auditing
 	$cpts = get_post_types( array( 'public' => true ), 'objects' );
 	foreach ( $cpts as $cpt ) {
-		if ( in_array( $cpt->name, $options['post_types'] ) )
+		if ( property_exists( $cpt, 'name' ) && is_array( $cpt->name ) && in_array( $cpt->name, $options['post_types'] ) )
 			$types[$cpt->name] = $cpt->label;
 	}
 	
-	$roles = $options['rolenames'];	
+	$roles = $options['rolenames'];
+	if ( ! is_array( $roles ) ) {
+		return;
+	}
+	
 	foreach ( $roles as $role ) :
         $users_query = new WP_User_Query( array( 
             'fields' => 'all_with_meta', 
