@@ -53,7 +53,7 @@ add_action( 'admin_init', 'content_audit_column_setup' );
 function content_audit_column_setup() {
 	global $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	if ( !is_array( $options['post_types'] ) )
 		$options['post_types'] = array( $options['post_types'] );
@@ -61,7 +61,7 @@ function content_audit_column_setup() {
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
 
-	if ( in_array( $role, $allowed ) ) {
+	if ( ( ( is_multisite() && is_super_admin() ) || in_array( $role, $allowed ) ) ) {
 		foreach ( $options['post_types'] as $type ) {
 			
 			switch ( $type ) {
@@ -110,7 +110,7 @@ function content_audit_columns( $defaults ) {
 	// make sure we rearrange columns only on custom post types we're auditing, and only for users who can audit
 	global $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	if ( isset( $_REQUEST['post_type'] ) )
 		$type = $_REQUEST['post_type'];
@@ -326,13 +326,13 @@ function add_quickedit_content_owner( $column_name, $type ) {
 function content_audit_front_end_display( $content ) {
 	global $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
 		
-	if ( !empty( $options['display_switch'] ) && in_array( $role, $allowed ) ) {
+	if ( !empty( $options['display_switch'] ) && ( ( is_multisite() && is_super_admin() ) || in_array( $role, $allowed ) ) ) {
 		$out = content_audit_notes( false );		
 		if ( $options['display'] == 'above' ) return $out.$content;
 		elseif ( $options['display'] == 'below' ) return $content.$out;
@@ -361,13 +361,13 @@ function content_audit_notes( $echo = true ) {
 function content_audit_front_end_css() {
 	global $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
 		
-	if ( !empty( $options['display'] ) && in_array( $role, $allowed ) ) {	
+	if ( !empty( $options['display'] ) && ( ( is_multisite() && is_super_admin() ) || in_array( $role, $allowed ) ) ) {	
 		echo '<style type="text/css">'.$options['css'].'</style>';
 	}
 }

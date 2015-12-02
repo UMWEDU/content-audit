@@ -141,7 +141,7 @@ add_action( 'admin_init', 'content_audit_taxonomies' );
 function content_audit_taxonomies() {
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	if ( !is_array( $options['post_types'] ) )
 		$options['post_types'] = array( $options['post_types'] );
@@ -149,7 +149,7 @@ function content_audit_taxonomies() {
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
 	foreach ( $options['post_types'] as $content_type ) {
-		if ( in_array( $role, $allowed ) )
+		if ( ( is_multisite() && is_super_admin() ) || in_array( $role, $allowed ) )
 			register_taxonomy_for_object_type( 'content_audit', $content_type );
 	}
 }
@@ -162,7 +162,7 @@ add_action( 'admin_init', 'content_audit_boxes' );
 function content_audit_boxes() {
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	if ( !is_array( $options['post_types'] ) )
 		$options['post_types'] = array( $options['post_types'] );
@@ -178,7 +178,7 @@ function content_audit_boxes() {
 			add_filter( 'attachment_fields_to_save', 'save_content_audit_media_meta', 10, 2 );
 		}
 		// let non-auditors see a read-only version of the taxonomy
-		if ( !in_array( $role, $allowed ) )  {
+		if ( !(( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) )  {
 			add_meta_box( 'content_audit_taxes', __( 'Content Audit','content-audit' ), 'content_audit_taxes_meta_box', $content_type, 'side', 'low' );
 		}
 	}
@@ -188,7 +188,7 @@ function content_audit_boxes() {
 	add_action( 'pre_post_update', 'save_content_audit_meta_data' );
 	
 	// don't show taxonomy checkboxes to non-auditors
-	if ( !in_array( $role, $allowed ) )  {
+	if ( !(( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) )  {
 		add_action( 'admin_menu', 'remove_audit_taxonomy_boxes' );
 	}
 }
@@ -204,7 +204,7 @@ function remove_audit_taxonomy_boxes()
 function content_audit_notes_meta_box() {
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
@@ -213,11 +213,18 @@ function content_audit_notes_meta_box() {
 	if ( function_exists( 'wp_nonce_field' ) ) wp_nonce_field( 'content_audit_notes_nonce', '_content_audit_notes_nonce' ); 
 ?>
 <div id="audit-notes">
-	<?php if ( in_array( $role, $allowed ) ) { ?>
+	<?php if ( ( is_multisite() && is_super_admin() ) || in_array( $role, $allowed ) ) { ?>
 	<textarea name="_content_audit_notes"><?php echo esc_textarea( $notes ); ?></textarea>
-	<?php }
+	<?php } else {
+		echo '<pre><code>';
+		var_dump( $current_user->roles );
+		echo '</code></pre>';
+		echo '<pre><code>';
+		var_dump( $current_user->roles );
+		echo '</code></pre>';
 	// let non-auditors read the notes. Same HTML that's allowed in posts. 
-	else echo wp_kses_post( $notes ); 
+	echo wp_kses_post( $notes ); 
+	}
 	?>
 </div>
 <?php
@@ -226,7 +233,7 @@ function content_audit_notes_meta_box() {
 function content_audit_owner_meta_box() {
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
@@ -237,7 +244,7 @@ function content_audit_owner_meta_box() {
 	<?php
 	$owner = get_post_meta( $post->ID, '_content_audit_owner', true );
 	if ( empty( $owner ) ) $owner = -1;
-	if ( in_array( $role, $allowed ) ) {
+	if ( (( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) ) {
 		wp_dropdown_users( array( 
 			'selected' => $owner, 
 			'name' => '_content_audit_owner', 
@@ -256,7 +263,7 @@ function content_audit_owner_meta_box() {
 function content_audit_exp_date_meta_box() {
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
@@ -269,7 +276,7 @@ function content_audit_exp_date_meta_box() {
 	// convert from timestamp to date string
 	if ( !empty( $date ) )
 		$date = date( 'm/d/y', $date );
-	if ( in_array( $role, $allowed ) ) { ?>
+	if ( (( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) ) { ?>
 		<input type="text" class="widefat datepicker" name="_content_audit_expiration_date" value="<?php esc_attr_e( $date ); ?>" />
 	<?php }
 	else
@@ -318,11 +325,11 @@ function save_content_audit_meta_data( $post_id ) {
 	// check capabilites
 	global $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
-	if ( !in_array( $role, $allowed ) )
+	if ( !(( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) )
 		return $post_id;
 			
 	// save fields	
@@ -530,12 +537,12 @@ function content_audit_quickedit( $column_name, $post_type ) {
 	// if the user can't audit, quit
 	global $post, $current_user;
 	get_currentuserinfo();
-	$role = $current_user->roles[0];
+	$role = is_array( $current_user->roles ) ? array_shift( $current_user->roles ) : '';
 	$options = get_option( 'content_audit' );
 	$allowed = $options['rolenames'];
 	if ( !is_array( $allowed ) )
 		$allowed = array( $allowed );
-	if ( !in_array( $role, $allowed ) )
+	if ( !(( is_multisite() && is_super_admin() ) || in_array( $role, $allowed )) )
 		return;
 	
 	// we're good to go		
