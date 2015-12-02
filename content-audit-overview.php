@@ -8,14 +8,16 @@ function content_audit_overview() { ?>
 	$types = $editors = $tables = array();
 	// get post types we're auditing
 	$cpts = get_post_types( array( 'public' => true ), 'objects' );
-	foreach ( $cpts as $cpt ) {
-		if ( property_exists( $cpt, 'name' ) && is_array( $cpt->name ) && in_array( $cpt->name, $options['post_types'] ) )
-			$types[$cpt->name] = $cpt->label;
+	if ( is_array( $cpts ) ) {
+		foreach ( $cpts as $cpt ) {
+			if ( property_exists( $cpt, 'name' ) && is_array( $cpt->name ) && in_array( $cpt->name, $options['post_types'] ) )
+				$types[$cpt->name] = $cpt->label;
+		}
 	}
 	
 	$roles = $options['rolenames'];
 	if ( ! is_array( $roles ) ) {
-		return;
+		$roles = array();
 	}
 	
 	foreach ( $roles as $role ) :
