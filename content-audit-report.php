@@ -231,6 +231,11 @@ add_filter( 'request', 'content_audit_column_orderby' );
 // print the dropdown box to filter posts by content status
 function content_audit_restrict_content_status() {
 	$options = get_option( 'content_audit' );
+	if ( ! is_array( $options ) )
+		$options = array( 'post_types' => array() );
+	if ( ! is_array( $options['post_types'] ) )
+		$options['post_types'] = array();
+		
 	if ( isset( $_GET['content_audit'] ) ) $content_status = $_GET['content_audit'];
 	else $content_status = ''; 
 	if ( isset( $_REQUEST['post_type'] ) ) $type = $_REQUEST['post_type'];
@@ -256,6 +261,11 @@ function content_audit_restrict_content_status() {
 function content_audit_restrict_content_owners() {
 	global $user_ID;
 	$options = get_option( 'content_audit' );
+	if ( ! is_array( $options ) )
+		$options = array( 'post_types' => array() );
+	if ( ! is_array( $options['post_types'] ) )
+		$options['post_types'] = array();
+		
 	if ( isset( $_GET['content_owner'] ) ) $owner = $_GET['content_owner'];
 	else $owner = '0'; 
 	if ( isset( $_REQUEST['post_type'] ) ) $type = $_REQUEST['post_type'];
