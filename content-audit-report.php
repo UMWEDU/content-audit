@@ -301,7 +301,9 @@ function content_audit_posts_where( $where )
 	global $wpdb;
 	if ( isset( $_GET['content_owner'] ) && !empty( $_GET['content_owner'] ) ) { 
 		$where .= " AND ID IN ( SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_content_audit_owner' AND meta_value='{$_GET['content_owner']}' )";
-	}	
+	} else if ( isset( $_GET['_content_audit_owner'] ) && ! empty( $_GET['_content_audit_owner'] ) ) {
+		$where .= " AND ID IN ( SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_content_audit_owner' AND meta_value='{$_GET['_content_audit_owner']}' )";
+	}
 	return $where;
 }
 

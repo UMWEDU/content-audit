@@ -9,9 +9,9 @@ function content_audit_overview() { ?>
 	// get post types we're auditing
 	$cpts = get_post_types( array( 'public' => true ), 'objects' );
 	if ( is_array( $cpts ) ) {
-		foreach ( $cpts as $cpt ) {
-			if ( property_exists( $cpt, 'name' ) && is_array( $cpt->name ) && in_array( $cpt->name, $options['post_types'] ) )
-				$types[$cpt->name] = $cpt->label;
+		foreach ( $cpts as $cpt => $obj ) {
+			if ( property_exists( $obj, 'labels' ) && is_object( $obj->labels ) && in_array( $cpt, $options['post_types'] ) )
+				$types[$cpt] = $obj->labels->name;
 		}
 	}
 	
@@ -30,6 +30,26 @@ function content_audit_overview() { ?>
         if ( $results ) 
 			$editors = array_merge( $editors, $results );
     endforeach;
+	
+	if ( is_multisite() ) {
+		$networkadmins = get_super_admins();
+		foreach ( $networkadmins as $admin ) {
+			$users_query = new WP_User_Query( array(
+				'fields' => 'all_with_meta', 
+				'search' => $admin, 
+				'search_columns' => array( 'user_login' ), 
+			) );
+			$results = $users_query->get_results();
+			$editors = array_merge( $editors, $results );
+		}
+	}
+	
+	$tmp = array();
+	foreach ( $editors as $editor ) {
+		$tmp[$editor->user_login] = $editor;
+	}
+	$editors = $tmp;
+	
 	//var_dump( $editors );
 	?>
 
